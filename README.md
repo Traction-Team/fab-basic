@@ -15,20 +15,16 @@ The whole process is in [.factory/docs/process.md](.factory/docs/process.md): th
 ## Import it
 
 ```sh
-npx @seasb/metafab import @seasb/fab-basic --agents claude,codex --setup
-```
-
-From Git, the same fab:
-
-```sh
 npx @seasb/metafab import github:Traction-Team/fab-basic --agents claude,codex --setup
 ```
+
+The fab is shared only as this Git repository. It is not on npm.
 
 `--setup` creates the repository files the factory needs from its templates: `docs/factory.md`, `opencode.json`, `orca.yaml` and `docs/roadmap.md`. Existing files are never changed.
 
 Then open `docs/factory.md` and set every `<set me>` value. `verify` is the one value with no default: it is the command that proves a branch green.
 
-The `orca.yaml` template runs `npx --yes @seasb/metafab build` in each new worktree. That step needs `@seasb/metafab` on npm (1.0.0). Until then, put your own build command in `orca.yaml` instead.
+The `orca.yaml` template runs `npx --yes @seasb/metafab build` in each new worktree.
 
 ## Updates
 
@@ -39,3 +35,14 @@ npx @seasb/metafab update
 ```
 
 Review the summary, run `verify`, and commit. `docs/factory.md` is yours: the fab ships no copy, so an update never touches it. Other edits you make in `.factory/` are merged, and `metafab diff` lists them.
+
+## Releases
+
+A release is a `v<version>` tag on `main`. Tag the commit and push the tag:
+
+```sh
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+Nothing is published to npm.
