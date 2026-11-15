@@ -1,0 +1,4 @@
+publish:
+  name: "@seasb/fab-basic"
+  version: 0.1.0
+  readme: README.md
