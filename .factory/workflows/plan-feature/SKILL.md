@@ -11,7 +11,7 @@ The run is always: read → poke holes with the person → divide → write → 
 
 Use `.factory/templates/plan.md`, and `.factory/templates/feature.md` for a feature doc. The plans already in `<plans>/` show the depth expected.
 
-The paths are settings in `docs/factory.md`: `plans`, `plan-names`, `roadmap`, `features`, `specs`, `docs-changes`, plus the sub-agent names and Amp models.
+The paths are settings in `docs/factory.md`: `plans`, `plan-names`, `roadmap`, `features`, `specs`, `docs-changes`, plus the sub-agent names, `amp-model-coding` and `amp-model-review`.
 
 ## 1. Read the context
 
@@ -39,7 +39,7 @@ Answer what the specs and code answer. Raise the rest with the person, grouped i
 Agree the list with the person in one message: one line per plan, with its title, its code when there is one, and what it needs.
 
 - Each pull request is one a reviewer can assess in one sitting, and each leaves `trunk` green (`verify` passes).
-- Order by dependency: shared model and utilities first, core logic next, command wiring and output last.
+- Order by dependency: shared types and utilities first, core logic next, command wiring and output last.
 - Use `needs` only for a real dependency. With `stacking` on, a plan whose need has not merged is built on that plan's branch; with `stacking` off, it waits for the need to merge.
 - A small change is one plan. If the work needs more than six, plan the first few now.
 
