@@ -33,6 +33,16 @@ test('the dated fixture passes, with feature docs, a sightings folder and a shor
   assert.match(result.stdout, /✓ factory check passed \(3 of 3 plans, 1 feature, docs\/roadmap\.md\)/);
 });
 
+test('a repository with no plans, intake, changelog or roadmap passes', () => {
+  // The fab's own repository holds no docs beyond its settings, so check.mjs must read absent directories as empty.
+  const dir = repoFrom('numbered');
+  for (const name of ['plans', 'intake', 'changelog']) rmSync(join(dir, 'docs', name), { recursive: true });
+  rmSync(join(dir, 'docs', 'roadmap.md'));
+  const result = check(dir);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /✓ factory check passed \(0 of 0 plans, no roadmap yet\)/);
+});
+
 test('a workspace without docs/factory.md says how to create it', () => {
   const dir = repoFrom('numbered');
   rmSync(join(dir, 'docs', 'factory.md'));

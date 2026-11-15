@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Node ${{ matrix.node }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            node: 20
+          - os: ubuntu-latest
+            node: 22
+          - os: macos-latest
+            node: 22
+          - os: windows-latest
+            node: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Test
+        run: npm test
+      - name: Factory check
+        run: node .factory/scripts/check.mjs
+      # Enabled once @seasb/metafab is on npm (1.0.0).
+      # - name: Metafab check
+      #   run: npx --yes @seasb/metafab check
