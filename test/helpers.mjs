@@ -3,7 +3,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, symlinkSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -86,4 +86,24 @@ export function withoutGh({ git: withGit = false } = {}) {
 
 export function git(dir, args) {
   return execFileSync('git', args, { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+}
+
+/**
+ * An environment whose `PATH` holds node and a stub `gh` the test writes, so a script that asks the host questions runs offline and what it asked can be read back. The stub runs with `GH_STUB_DIR` set, so it finds the files the test puts beside it and can append to them. Windows cannot launch an executable shim through `execFileSync`, so a test that uses one skips there.
+ */
+export function stubGh(source, files = {}) {
+  const dir = tempDir('fab-basic-gh-');
+  const bin = join(dir, 'bin');
+  mkdirSync(bin, { recursive: true });
+  const gh = join(bin, 'gh');
+  writeFileSync(gh, source);
+  chmodSync(gh, 0o755);
+  for (const [name, content] of Object.entries(files)) {
+    writeFileSync(join(dir, name), typeof content === 'string' ? content : JSON.stringify(content));
+  }
+  const env = {};
+  for (const [key, value] of Object.entries(process.env)) if (key.toLowerCase() !== 'path') env[key] = value;
+  env.GH_STUB_DIR = dir;
+  env.PATH = [bin, dirname(process.execPath)].join(delimiter);
+  return { dir, env };
 }
