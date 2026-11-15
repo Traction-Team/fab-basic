@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
 import { DEFAULTS, SETTINGS_MISSING, parseSettings, readSettings } from '../.factory/scripts/lib.mjs';
-import { FAB, git, json, repoFrom, runScript } from './helpers.mjs';
+import { FAB, git, json, repoFrom, runScript, withoutGh } from './helpers.mjs';
 
 const table = (rows) => ['# Settings', '', '| Setting | Value | Meaning |', '| --- | --- | --- |', ...rows, ''].join('\n');
 const row = (key, value) => `| \`${key}\` | ${value} | What it means. |`;
@@ -114,21 +114,24 @@ test('settings are read at the ref, not from the working tree', () => {
   const probe = join(dir, '.factory', 'scripts', 'probe.mjs');
   writeFileSync(probe, ["import { fileSource, readSettings } from './lib.mjs';", 'const source = fileSource(process.argv[2]);', 'const s = readSettings(source).values;', 'console.log(JSON.stringify({ plans: s.plans, roadmap: s.roadmap, trunk: s.trunk }));', ''].join('\n'));
 
-  const atRef = runScript(dir, 'probe.mjs', [sha]);
+  // Reading a ref needs git, and a claim read must not reach the network: the path holds git but no gh.
+  const env = withoutGh({ git: true });
+
+  const atRef = runScript(dir, 'probe.mjs', [sha], { env });
   assert.equal(atRef.status, 0, atRef.stderr);
   assert.deepEqual(json(atRef), { plans: 'docs/plans', roadmap: 'docs/roadmap.md', trunk: 'main' });
 
-  const working = runScript(dir, 'probe.mjs');
+  const working = runScript(dir, 'probe.mjs', [], { env });
   assert.deepEqual(json(working), { plans: 'docs/work/plans', roadmap: 'docs/work/roadmap.md', trunk: 'next' });
 
-  // next.mjs reads the same source for both its settings and its documents. `gh` finds no remote in this
-  // temporary repository, so the claim read comes back empty rather than reaching the network.
-  const fromRef = json(runScript(dir, 'next.mjs', ['--ref', sha, '--json']));
+  // next.mjs reads the same source for both its settings and its documents. With no `gh`, the claim read
+  // comes back empty rather than reaching the network.
+  const fromRef = json(runScript(dir, 'next.mjs', ['--ref', sha, '--json'], { env }));
   assert.equal(fromRef.ref, sha);
   assert.equal(fromRef.prClaimsRead, false);
   assert.ok(fromRef.ready.some((r) => r.plan === 'docs/plans/1.004-docs.md'), fromRef.ready.map((r) => r.plan).join(', '));
   assert.ok(!fromRef.ready.some((r) => r.plan.startsWith('docs/work/')));
 
-  const fromTree = json(runScript(dir, 'next.mjs', ['--json']));
+  const fromTree = json(runScript(dir, 'next.mjs', ['--json'], { env }));
   assert.deepEqual(fromTree.ready.map((r) => r.plan), ['docs/work/plans/1.001-other.md']);
 });

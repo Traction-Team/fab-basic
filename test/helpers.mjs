@@ -3,9 +3,9 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const FAB = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -42,11 +42,46 @@ export function json(result) {
   return JSON.parse(result.stdout);
 }
 
-/** An environment with an empty `PATH`, so neither `gh` nor `git` is found. Scripts handle both being unavailable. */
-export function withoutGh() {
+/** The first `name` on the current `PATH`, resolved the way the OS does: with `PATHEXT` on Windows. */
+function onPath(name) {
+  const dirs = Object.entries(process.env)
+    .filter(([key]) => key.toLowerCase() === 'path')
+    .flatMap(([, value]) => String(value ?? '').split(delimiter));
+  const exts = process.platform === 'win32' ? (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';') : [''];
+  for (const dir of dirs) {
+    if (!dir) continue;
+    for (const ext of exts) {
+      for (const candidate of [`${name}${ext}`, `${name}${ext.toLowerCase()}`]) {
+        if (candidate && existsSync(join(dir, candidate))) return join(dir, candidate);
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * An environment whose `PATH` holds only what the test asks for, so `gh` is never found. On Windows the variable is usually spelled `Path`, so every spelling is dropped and one `PATH` is set; scripts and tests then see a single value everywhere.
+ *
+ * `git: true` adds git, for a test that reads a ref and no `gh`. On Windows git's own directory goes on the path, because an executable shim cannot be launched through `execFileSync`; Git for Windows keeps `gh` in another directory. Elsewhere one link to git is made, so `gh` stays hidden even when both live in the same directory.
+ */
+export function withoutGh({ git: withGit = false } = {}) {
+  const env = {};
+  for (const [key, value] of Object.entries(process.env)) if (key.toLowerCase() !== 'path') env[key] = value;
   const bin = join(tempDir('fab-basic-bin-'), 'bin');
   mkdirSync(bin, { recursive: true });
-  return { ...process.env, PATH: bin };
+  if (withGit) {
+    const gitPath = onPath('git');
+    if (!gitPath) throw new Error('git is not on PATH, and this test needs it');
+    if (process.platform === 'win32') {
+      env.PATH = dirname(gitPath);
+    } else {
+      symlinkSync(gitPath, join(bin, 'git'));
+      env.PATH = bin;
+    }
+  } else {
+    env.PATH = bin;
+  }
+  return env;
 }
 
 export function git(dir, args) {
