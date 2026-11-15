@@ -31,6 +31,7 @@ jobs:
         run: npm test
       - name: Factory check
         run: node .factory/scripts/check.mjs
-      # Enabled once @seasb/metafab is on npm (1.0.0).
-      # - name: Metafab check
-      #   run: npx --yes @seasb/metafab check
+      - name: Metafab build
+        run: npx --yes @seasb/metafab@next build
+      - name: Metafab check
+        run: npx --yes @seasb/metafab@next check
