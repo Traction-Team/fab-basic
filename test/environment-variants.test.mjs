@@ -6,7 +6,7 @@
 
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import test from 'node:test';
 import { FAB } from './helpers.mjs';
 
@@ -124,7 +124,7 @@ test('a marker appears once, in its own partial, so a preview for another value 
     for (const [value, marker] of Object.entries(markers)) {
       const owners = [...texts.entries()]
         .filter(([, text]) => text.includes(marker))
-        .map(([file]) => file.slice(FACTORY.length + 1));
+        .map(([file]) => relative(FACTORY, file).split(sep).join('/'));
       assert.deepEqual(
         owners,
         [`partials/${name}.md`],
