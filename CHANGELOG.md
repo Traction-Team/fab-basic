@@ -2,6 +2,18 @@
 
 A release is a `v<version>` tag on `main`. The tag holds the exact commits; this file says what changed for the people who use the factory.
 
+## 0.2.1
+
+The CLI command is back to plain `npx --yes @seasb/metafab`. Metafab 2.0.0 is on npm under `latest`, so the `next` dist-tag is no longer needed:
+
+```sh
+npx --yes @seasb/metafab
+```
+
+Only that command changes in the setup templates, the docs and CI; the factory's behaviour and format are the same as 0.2.0.
+
+A repository that created `docs/factory.md` or `orca.yaml` from the 0.2.0 templates keeps the `next` dist-tag there, because `update` never rewrites a file a template created. Change `@next` in those two files by hand.
+
 ## 0.2.0 — breaking
 
 This release needs **Metafab 2**. It reads a `format: 2` factory; Metafab 1 refuses this one with exit 4. Run it through the `next` dist-tag until 2.0.0 ships:

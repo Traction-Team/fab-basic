@@ -32,6 +32,6 @@ jobs:
       - name: Factory check
         run: node .factory/scripts/check.mjs
       - name: Metafab build
-        run: npx --yes @seasb/metafab@next build
+        run: npx --yes @seasb/metafab build
       - name: Metafab check
-        run: npx --yes @seasb/metafab@next check
+        run: npx --yes @seasb/metafab check
